@@ -13,6 +13,7 @@ The Terminal also contains a number of charts and graphs for quickly interpretin
 ## License
 
 Creative Commons - https://creativecommons.org/licenses/by-sa/3.0/us/
+
 GPLv2 - http://www.gnu.org/licenses/gpl-2.0.html
 
 
