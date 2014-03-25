@@ -4,11 +4,13 @@ Welcome to the AfriLabs Terminal, an open source, data-driven portal for discove
 
 ## About the Terminal
 
-Welcome to the AfriLabs Terminal, a portal for discovering opportunities for investment or social impact in Africa. This project contains data that is painstakingly monitored, mined and made available by the team at AfriLabs.org. We take a different approach to sharing data about early stage-African investment opportunities, by considering the a more holistic perspective of companies by considering the market they're in, the surrounding trends, and their supporters.
+Welcome to the AfriLabs Terminal, a portal for discovering opportunities for investment or social impact in Africa.
+ 
+This project contains data that is monitored, mined and made available by the team at AfriLabs. We take a different approach to sharing data about early stage-African investment opportunities by considering information about the communities companies operate in, in addition to traditional performance metrics.
+ 
+Are you looking for the answers to questions like "Which companies working in industries with the highest known returns in Africa?" or "Which companies have the highest potential for social impact?" These are the types of questions users might ask (and have answered) by AfriLabs Terminal.
 
-Are you looking for the most successful companies operating in the toughest markets? Or perhaps, fledgling companies in the most lucrative markets? How about searching for investment opportunities in countries that are toughest on free-speech? These are the types of questions users might ask (and have answered) by AfriLabs Terminal. Search using such questions or through powerful filters. 
-
-The Terminal also contains a number of charts and graphs for quickly interpreting data.
+The Terminal also contains a number of charts and graphs for quickly interpreting the returned data.
 
 ## License
 
