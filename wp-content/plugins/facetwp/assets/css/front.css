@@ -20,6 +20,11 @@
     background: url(../images/checkbox-on.png) no-repeat;
 }
 
+.facetwp-checkbox.disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
 .facetwp-pager-label {
     display: inline-block;
     margin-right: 12px;
@@ -45,7 +50,7 @@
 
 /* Hierarchy facets */
 
-.facetwp-depth .facetwp-depth {
+.facetwp-depth {
     margin-left: 12px;
 }
 

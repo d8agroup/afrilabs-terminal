@@ -12,8 +12,7 @@ class FacetWP_Facet
 
 
     function __construct() {
-        $this->helper = FacetWP_Helper::instance();
-        $this->facet_types = $this->helper->facet_types;
+        $this->facet_types = FWP()->helper->facet_types;
     }
 
 
@@ -35,7 +34,7 @@ class FacetWP_Facet
         // Validate facets
         $this->facets = array();
         foreach ( $params['facets'] as $f ) {
-            $facet = $this->helper->get_facet_by_name( $f['facet_name'] );
+            $facet = FWP()->helper->get_facet_by_name( $f['facet_name'] );
             if ( false !== $facet ) {
                 $facet['selected_values'] = $f['selected_values'];
                 $this->facets[] = $facet;
@@ -46,10 +45,17 @@ class FacetWP_Facet
         $this->http_params = $params['http_params'];
 
         // Get the template from $helper->settings
-        $this->template = $this->helper->get_template_by_name( $params['template'] );
+        if ( 'wp' == $params['template'] ) {
+            $this->template = array( 'name' => 'wp' );
+            $query_args = FWP()->ajax->query_vars;
+        }
+        else {
+            $this->template = FWP()->helper->get_template_by_name( $params['template'] );
+            $query_args = $this->get_query_args();
+        }
 
         // Get the template "query" field
-        $this->query_args = apply_filters( 'facetwp_query_args', $this->get_query_args(), $this );
+        $this->query_args = apply_filters( 'facetwp_query_args', $query_args, $this );
 
         // Pagination
         $page = empty( $params['paged'] ) ? 1 : (int) $params['paged'];
@@ -60,16 +66,16 @@ class FacetWP_Facet
         $post_ids = $this->get_filtered_post_ids();
 
         // Update the SQL query
-        if ( !empty( $post_ids ) ) {
+        if ( ! empty( $post_ids ) ) {
             $this->query_args['post__in'] = $post_ids;
         }
 
         // Sort handler
-        if ( !empty( $params['extras']['sort'] ) ) {
+        if ( ! empty( $params['extras']['sort'] ) ) {
             $sort_value = $params['extras']['sort'];
             $this->sort_options = $this->get_sort_options();
-            if ( !empty( $this->sort_options[$sort_value] ) ) {
-                $args = $this->sort_options[$sort_value]['query_args'];
+            if ( ! empty( $this->sort_options[ $sort_value ] ) ) {
+                $args = $this->sort_options[ $sort_value ]['query_args'];
                 $this->query_args = array_merge( $this->query_args, $args );
             }
         }
@@ -88,7 +94,9 @@ class FacetWP_Facet
         $this->query = new WP_Query( $this->query_args );
 
         // Generate the template HTML
-        $output['template'] = $this->get_template_html( $params['template'] );
+        if ( 'wp' != $this->template['name'] ) {
+            $output['template'] = $this->get_template_html( $params['template'] );
+        }
 
         // Static facet - the active facet's operator is "or"
         $static_facet = $params['static_facet'];
@@ -183,7 +191,7 @@ class FacetWP_Facet
      * @return array An array of post IDs
      */
     function get_filtered_post_ids() {
-        global $wpdb;
+        global $wpdb, $facetwp;
 
         // Only get relevant post IDs
         $args = $this->query_args;
@@ -202,12 +210,19 @@ class FacetWP_Facet
             return array( 0 );
         }
 
+        // See if an "OR" checkbox facet exists
+        // If not, then we can save memory by not storing extra post IDs
+        $or_exists = FWP()->helper->facet_setting_exists( 'operator', 'or', $this->facets );
+        if ( $or_exists ) {
+            $facetwp->unfiltered_post_ids = $post_ids;
+        }
+
         foreach ( $this->facets as $the_facet ) {
 
             $matches = array();
 
             // Sanitize the input values
-            $selected_values = $this->helper->sanitize( $the_facet['selected_values'] );
+            $selected_values = FWP()->helper->sanitize( $the_facet['selected_values'] );
 
             if ( empty( $selected_values ) ) {
                 continue;
@@ -227,6 +242,11 @@ class FacetWP_Facet
             // Skip this facet
             if ( 'continue' == $matches ) {
                 continue;
+            }
+
+            // If "OR" checkbox facets exist, separate post IDs by facet
+            if ( $or_exists ) {
+                $facetwp->or_values[ $the_facet['name'] ] = $matches;
             }
 
             // Preserve post ID order for search facets
@@ -262,13 +282,15 @@ class FacetWP_Facet
      * @return string (HTML)
      */
     function get_template_html() {
-        global $post;
+        global $post, $wp_query;
 
         $output = apply_filters( 'facetwp_template_html', false, $this );
 
         if ( false === $output ) {
             ob_start();
+
             $query = $this->query;
+            $wp_query = $query; // Make $query->blah() optional
 
             // Remove UTF-8 non-breaking spaces
             $display_code = $this->template['template'];
@@ -278,6 +300,7 @@ class FacetWP_Facet
             $output = ob_get_clean();
         }
 
+        $output = preg_replace( "/\xC2\xA0/", ' ', $output );
         return $output;
     }
 
@@ -325,7 +348,7 @@ class FacetWP_Facet
 
         // Generate the labels array
         foreach ( $this->facets as $the_facet ) {
-            if ( !empty( $facet['selected_values'] ) ) {
+            if ( !empty( $the_facet['selected_values'] ) ) {
 
                 $facet_name = $the_facet['name'];
                 $facet_type = $the_facet['type'];
@@ -347,8 +370,16 @@ class FacetWP_Facet
                     }
                 }
                 elseif ( in_array( $facet_type, array( 'slider', 'number_range', 'date_range' ) ) ) {
-                    $display_value = '[' . $selected_values[0] . ' — ' . $selected_values[1] . ']';
-                    $selections[$facet_name][''] = $display_value;
+                    if ( '' != $selected_values[0] && '' != $selected_values[1] ) {
+                        $display_value = $selected_values[0] . ' to ' . $selected_values[1];
+                    }
+                    elseif ( '' != $selected_values[0] ) {
+                        $display_value = '>= ' . $selected_values[0];
+                    }
+                    elseif ( '' != $selected_values[1] ) {
+                        $display_value = '<= ' . $selected_values[1];
+                    }
+                    $selections[$facet_name][''] = "[$display_value]";
                 }
                 elseif ( in_array( $facet_type, array( 'search', 'autocomplete' ) ) ) {
                     $display_value = is_array( $selected_values ) ? $selected_values[0] : $selected_values;

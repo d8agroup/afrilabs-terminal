@@ -9407,7 +9407,7 @@
 			 *      } );
 			 *    } );
 			 */
-			"sLengthMenu": "Show _MENU_",
+			"sLengthMenu": "Show _MENU_ entries",
 		
 		
 			/**

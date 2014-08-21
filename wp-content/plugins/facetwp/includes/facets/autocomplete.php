@@ -100,7 +100,7 @@ class FacetWP_Facet_Autocomplete
     });
 
     $(document).on('click', '.facetwp-autocomplete-update', function() {
-        FWP.refresh();
+        FWP.autoload();
     });
 })(jQuery);
 </script>
@@ -129,6 +129,7 @@ class FacetWP_Facet_Autocomplete
         SELECT DISTINCT facet_display_value
         FROM {$wpdb->prefix}facetwp_index
         WHERE facet_name = '$facet_name' AND facet_display_value LIKE '%$query%'
+        ORDER BY facet_display_value ASC
         LIMIT 10";
         $results = $wpdb->get_results( $sql );
 

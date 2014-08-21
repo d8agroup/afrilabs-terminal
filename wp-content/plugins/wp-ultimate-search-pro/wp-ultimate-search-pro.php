@@ -3,7 +3,7 @@
 Plugin Name: WP Ultimate Search Pro
 Plugin URI: http://mindsharelabs.com/products/wp-ultimate-search-pro/
 Description: Premium version of WP Ultimate Search, includes advanced options for searching within taxonomies and post_meta fields.
-Version: 1.4.1
+Version: 1.6
 Author: Mindshare Studios, Inc.
 Author URI: http://mindsharelabs.com/
 */
@@ -14,7 +14,7 @@ if(!defined('WPUS_PRO_ITEM_NAME'))
 define( 'WPUS_PRO_ITEM_NAME', 'WP Ultimate Search Pro' );
 
 if(!defined('WPUS_PRO_VERSION'))
-	define( 'WPUS_PRO_VERSION', '1.4.1' );
+	define( 'WPUS_PRO_VERSION', '1.6' );
 
 if(!file_exists(WP_PLUGIN_DIR.'/wp-ultimate-search/wp-ultimate-search.php')) {
 	echo '<div id="message" class="error"><p>Please <a target="_parent" href="plugin-install.php?tab=search&s=wp+ultimate+search">install WP Ultimate Search</a> before attempting to activate the pro upgrade.</p></div>';
@@ -22,29 +22,6 @@ if(!file_exists(WP_PLUGIN_DIR.'/wp-ultimate-search/wp-ultimate-search.php')) {
 }
 if(!function_exists('is_plugin_active')) {
 	include_once(ABSPATH.'wp-admin/includes/plugin.php');
-}
-
-if(!class_exists("Sort_Posts")) {
-	class Sort_Posts {
-		var $order, $orderby;
-		
-		function __construct( $orderby, $order ) {
-			$this->orderby = $orderby;
-			$this->order = ( 'desc' == strtolower( $order ) ) ? 'DESC' : 'ASC';
-		}
-		
-		function sort( $a, $b ) {
-			if ( $a->{$this->orderby} == $b->{$this->orderby} ) {
-				return 0;
-			}
-			
-			if ( $a->{$this->orderby} < $b->{$this->orderby} ) {
-				return ( 'ASC' == $this->order ) ? -1 : 1;
-			} else {
-				return ( 'ASC' == $this->order ) ? 1 : -1;
-			}
-		}
-	}
 }
 
 if(!class_exists("WPUltimateSearchPro") && class_exists("WPUltimateSearch")) :
@@ -93,7 +70,7 @@ if(!class_exists("WPUltimateSearchPro") && class_exists("WPUltimateSearch")) :
 				return false;
 			}
 			
-			usort( $posts, array( new Sort_Posts( $orderby, $order ), 'sort' ) );
+			usort( $posts, array( new WPUS_Sort_Posts( $orderby, $order ), 'sort' ) );
 			
 			// use post ids as the array keys
 			if ( $unique && count( $posts ) ) {
@@ -135,11 +112,28 @@ if(!class_exists("WPUltimateSearchPro") && class_exists("WPUltimateSearch")) :
 			$options = $this->options;
 
 			foreach($options['metafields'] as $metafield => $value) {
+
 				if($metafield == $facet) {
+
 					if($value['type'] == 'checkbox') {
+
 						$data = serialize(array($data));
 						return $data;
+
+					} elseif($value['type'] == 'date') {
+
+						return(date(apply_filters('wpus_date_save_format'), strtotime($data)));
+
+					} elseif($value['type'] == 'true-false') {
+
+						if($data == "True") {
+							return '1';
+						} else {
+							return '0';
+						}
+
 					} elseif($value['type'] == 'radius') {
+
 				        $prepaddr = urlencode($data);
 				        $geocode=file_get_contents('http://maps.google.com/maps/api/geocode/json?address='.$prepaddr.'&sensor=false');
 				        $output= json_decode($geocode);
@@ -147,6 +141,7 @@ if(!class_exists("WPUltimateSearchPro") && class_exists("WPUltimateSearch")) :
 				        $long = $output->results[0]->geometry->location->lng;
 				        $this->radius_facet = $facet;
 				        return array($data,$lat,$long);
+				        
 					}
 				}
 			}
@@ -260,20 +255,40 @@ if(!class_exists("WPUltimateSearchPro") && class_exists("WPUltimateSearch")) :
 
 				$query['tax_query'] = array();
 
-				if($this->options['and_or'] == "and" && count($taxonomies) > 1) {
+				// Create an AND relation between different taxonomies
+				if(count($taxonomies) > 1)
 					$query['tax_query']['relation'] = "AND";
-				} elseif ($this->options['and_or'] == "or" && count($taxonomies) > 1) {
-					$query['tax_query']['relation'] = "OR";
-				}
-
 
 				foreach($taxonomies as $taxonomy => $terms) {
 
-					$query['tax_query'][] = array(
-						'taxonomy'	=> $taxonomy,
-						'terms'		=> $terms
-					);
+					// By default, use an OR operation on terms w/in the same taxonomy
+					$operator = "IN";
+					$include_children = true;
 
+					if(count($terms) > 1 && $this->options['and_or'] == "and") {
+
+						$query['tax_query']['relation'] = "AND";
+
+						foreach($terms as $term) {
+
+							$query['tax_query'][] = array(
+								'taxonomy'	        => $taxonomy,
+								'terms'		        => $term,
+							    'operator'          => "IN",
+							    'include_children'	=> true
+							);
+
+						}
+
+					} else {
+
+						$query['tax_query'][] = array(
+							'taxonomy'	        => $taxonomy,
+							'terms'		        => $terms,
+						    'operator'          => $operator,
+						    'include_children'  => $include_children
+						);
+					}
 				}
 			}
 
@@ -379,6 +394,27 @@ if(!class_exists("WPUltimateSearchPro") && class_exists("WPUltimateSearch")) :
 			parent::print_results($wpus_results, $keywords, $location_arr); // format and output the search results
 
 			die(); // wordpress may print out a spurious zero without this - can be particularly bad if using json
+		}
+	}
+
+	class WPUS_Sort_Posts extends WPUltimateSearchPro {
+		var $order, $orderby;
+		
+		function __construct( $orderby, $order ) {
+			$this->orderby = $orderby;
+			$this->order = ( 'desc' == strtolower( $order ) ) ? 'DESC' : 'ASC';
+		}
+		
+		function sort( $a, $b ) {
+			if ( $a->{$this->orderby} == $b->{$this->orderby} ) {
+				return 0;
+			}
+			
+			if ( $a->{$this->orderby} < $b->{$this->orderby} ) {
+				return ( 'ASC' == $this->order ) ? -1 : 1;
+			} else {
+				return ( 'ASC' == $this->order ) ? 1 : -1;
+			}
 		}
 	}
 

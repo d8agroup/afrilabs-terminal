@@ -13,7 +13,56 @@ class FacetWP_Ajax
         add_action( 'wp_ajax_facetwp_heartbeat', array( $this, 'heartbeat' ) );
         add_action( 'wp_ajax_facetwp_license', array( $this, 'license' ) );
         add_action( 'wp_ajax_facetwp_migrate', array( $this, 'migrate' ) );
+
+        // handle requests without templates
+        $action = isset( $_POST['action'] ) ? $_POST['action'] : '';
+        if ( 'facetwp_refresh' == $action && 'wp' == $_POST['data']['template'] ) {
+            ob_start();
+
+            include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
+            add_action( 'pre_get_posts', array( $this, 'update_query_vars' ), 999 );
+            add_action( 'wp_footer', array( $this, 'inject_template' ), 999 );
+        }
     }
+
+
+    /**
+     * Force FacetWP to use the default WP query
+     */
+    function update_query_vars( $query ) {
+
+        if ( $query->is_singular() ) {
+            return;
+        }
+
+        if ( ! isset( $this->query_vars ) ) {
+
+            // Store the default WP query vars
+            $this->query_vars = $query->query_vars;
+
+            // Tell FacetWP to use the default WP template
+            $params = $this->process_post_data();
+            $params['template'] = 'wp';
+
+            // Generate the facet output
+            $this->output = FWP()->facet->render( $params );
+
+            // Set up the updated query_vars
+            $query->query_vars = FWP()->facet->query_args;
+        }
+    }
+
+
+    /**
+     * Inject the page HTML into the JSON response
+     * We'll cherry-pick the content from the HTML using front.js
+     */
+    function inject_template() {
+        $this->output['template'] = ob_get_clean();
+        echo json_encode( $this->output );
+        exit;
+    }
+
 
 
     /**
@@ -21,9 +70,9 @@ class FacetWP_Ajax
      */
     function load_settings() {
         if ( current_user_can( 'manage_options' ) ) {
-            echo get_option( 'facetwp_settings' );
+            echo json_encode( FWP()->helper->settings );
         }
-        die();
+        exit;
     }
 
 
@@ -36,7 +85,7 @@ class FacetWP_Ajax
             update_option( 'facetwp_settings', $settings );
             echo __( 'Settings saved', 'fwp' );
         }
-        die();
+        exit;
     }
 
 
@@ -45,20 +94,16 @@ class FacetWP_Ajax
      */
     function rebuild_index() {
         if ( current_user_can( 'manage_options' ) ) {
-            $indexer = new FacetWP_Indexer();
-            $indexer->index();
+            FWP()->indexer->index();
         }
-        die();
+        exit;
     }
 
 
     /**
-     * The AJAX facet refresh handler
+     * Generate a $params array that can be passed directly into FWP()->facet->render()
      */
-    function refresh() {
-
-        global $wpdb;
-
+    function process_post_data() {
         $data = stripslashes_deep( $_POST['data'] );
         $facets = json_decode( $data['facets'] );
         $extras = isset( $data['extras'] ) ? $data['extras'] : array();
@@ -80,8 +125,20 @@ class FacetWP_Ajax
             );
         }
 
-        $facet_class = new FacetWP_Facet();
-        $output = $facet_class->render( $params );
+        return $params;
+    }
+
+
+    /**
+     * The AJAX facet refresh handler
+     */
+    function refresh() {
+
+        global $wpdb;
+
+        $params = $this->process_post_data();
+        $output = FWP()->facet->render( $params );
+        $data = stripslashes_deep( $_POST['data'] );
 
         // Query debugging
         if ( defined( 'SAVEQUERIES' ) && SAVEQUERIES ) {
@@ -113,9 +170,8 @@ class FacetWP_Ajax
      * Keep track of indexing progress
      */
     function heartbeat() {
-        $indexer = new FacetWP_Indexer();
-        echo $indexer->get_progress();
-        die();
+        echo FWP()->indexer->get_progress();
+        exit;
     }
 
 
@@ -124,7 +180,6 @@ class FacetWP_Ajax
      */
     function migrate() {
         $action_type = $_POST['action_type'];
-        $helper = FacetWP_Helper::instance();
 
         $output = array();
 
@@ -135,24 +190,24 @@ class FacetWP_Ajax
                 foreach ( $items as $item ) {
                     if ( 'facet' == substr( $item, 0, 5 ) ) {
                         $item_name = substr( $item, 6 );
-                        $output['facets'][] = $helper->get_facet_by_name( $item_name );
+                        $output['facets'][] = FWP()->helper->get_facet_by_name( $item_name );
                     }
                     elseif ( 'template' == substr( $item, 0, 8 ) ) {
                         $item_name = substr( $item, 9 );
-                        $output['templates'][] = $helper->get_template_by_name( $item_name );
+                        $output['templates'][] = FWP()->helper->get_template_by_name( $item_name );
                     }
                 }
             }
             echo json_encode( $output );
         }
         elseif ( 'import' == $action_type ) {
-            $settings = $helper->settings;
+            $settings = FWP()->helper->settings;
             $import_code = json_decode( stripslashes( $_POST['import_code'] ), true );
             $overwrite = (int) $_POST['overwrite'];
 
             if ( empty( $import_code ) || !is_array( $import_code ) ) {
                 _e( 'Nothing to import', 'fwp' );
-                die();
+                exit;
             }
 
             $response = array(
@@ -196,7 +251,7 @@ class FacetWP_Ajax
             }
         }
 
-        die();
+        exit;
     }
 
 
@@ -205,14 +260,13 @@ class FacetWP_Ajax
      */
     function license() {
         $license = $_POST['license'];
-        $helper = FacetWP_Helper::instance();
 
         $request = wp_remote_post( 'https://facetwp.com/updater/', array(
             'body' => array(
                 'action'        => 'activate',
                 'slug'          => 'facetwp',
                 'license'       => $license,
-                'host'          => $helper->get_http_host(),
+                'host'          => FWP()->helper->get_http_host(),
             )
         ) );
 
@@ -227,6 +281,6 @@ class FacetWP_Ajax
                 'message'   => __( 'Unable to connect to activation server', 'fwp' ),
             ) );
         }
-        die();
+        exit;
     }
 }

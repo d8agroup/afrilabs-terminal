@@ -17,9 +17,9 @@ class FacetWP_Facet_Date_Range
         $value = $params['selected_values'];
         $value = empty( $value ) ? array( '', '', ) : $value;
         $output .= '<label>' . __( 'Start Date', 'fwp' ) . '</label>';
-        $output .= '<input type="text" class="facetwp-date facetwp-date-min" value="' . $value[0] . '" />';
+        $output .= '<div><input type="text" class="facetwp-date facetwp-date-min" value="' . $value[0] . '" /></div>';
         $output .= '<label>' . __( 'End Date', 'fwp' ) . '</label>';
-        $output .= '<input type="text" class="facetwp-date facetwp-date-max" value="' . $value[1] . '" />';
+        $output .= '<div><input type="text" class="facetwp-date facetwp-date-max" value="' . $value[1] . '" /></div>';
         return $output;
     }
 
@@ -97,7 +97,7 @@ class FacetWP_Facet_Date_Range
                 autoclose: true,
                 clearBtn: true
             }).on('changeDate', function(e) {
-                FWP.refresh();
+                FWP.autoload();
             });
         });
     });

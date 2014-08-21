@@ -65,7 +65,7 @@ foreach ( $settings['templates'] as $template ) {
     </div>
     <h2>FacetWP <?php _e( 'Migrate', 'fwp' ); ?></h2>
 
-    <a class="button" style="float:right; margin:-25px 20px 0 0" href="options-general.php?page=facetwp">&laquo; <?php _e( 'Settings', 'fwp' ); ?></a>
+    <a class="button" style="float:right; margin:-35px 0 0 0" href="options-general.php?page=facetwp">&laquo; <?php _e( 'Settings', 'fwp' ); ?></a>
 
     <div class="facetwp-response"></div>
 

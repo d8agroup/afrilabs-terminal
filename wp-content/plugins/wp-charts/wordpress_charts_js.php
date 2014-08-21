@@ -151,7 +151,7 @@ function wp_charts_shortcode( $atts ) {
 			'data'             => '30,50,100',
 			'datasets'         => '30,50,100 next 20,90,75',
 			'colors'           => '#69D2E7,#E0E4CC,#F38630,#96CE7F,#CEBC17,#CE4264',
-			'fillopacity'      => '0.7',
+			'fillopacity'      => '0.9',
 			'pointstrokecolor' => '#FFFFFF',
 			'animation'		   => 'true',
 			'scalefontsize'    => '12',

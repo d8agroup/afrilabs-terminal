@@ -17,7 +17,7 @@ class FacetWP_Vendor
      */
     function search_args( $args, $class ) {
 
-        if ( isset( $args['s'] ) ) {
+        if ( ! empty( $args['s'] ) ) {
             $class->is_search = true;
 
             if ( is_plugin_active( 'searchwp/searchwp.php' ) ) {

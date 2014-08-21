@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: FacetWP\n"
-"POT-Creation-Date: 2014-02-24 06:57-0500\n"
-"PO-Revision-Date: 2014-02-24 06:57-0500\n"
+"POT-Creation-Date: 2014-05-07 18:55-0500\n"
+"PO-Revision-Date: 2014-05-07 18:55-0500\n"
 "Last-Translator: FacetWP <hello@uproot.us>\n"
 "Language-Team: Matt Gibbs <hello@uproot.us>\n"
 "Language: en\n"
@@ -14,56 +14,56 @@ msgstr ""
 "X-Poedit-Basepath: ../\n"
 "X-Poedit-SearchPath-0: .\n"
 
-#: includes/class-ajax.php:37
+#: includes/class-ajax.php:38
 msgid "Settings saved"
 msgstr ""
 
-#: includes/class-ajax.php:154
+#: includes/class-ajax.php:155
 msgid "Nothing to import"
 msgstr ""
 
-#: includes/class-ajax.php:159
+#: includes/class-ajax.php:160
 msgid "Import complete"
 msgstr ""
 
-#: includes/class-ajax.php:192
+#: includes/class-ajax.php:193
 msgid "Imported"
 msgstr ""
 
-#: includes/class-ajax.php:195
+#: includes/class-ajax.php:196
 msgid "Skipped"
 msgstr ""
 
-#: includes/class-ajax.php:227
+#: includes/class-ajax.php:228
 msgid "Unable to connect to activation server"
 msgstr ""
 
-#: includes/class-facet.php:292 includes/class-facet.php:481
+#: includes/class-facet.php:304 includes/class-facet.php:494
 msgid "of"
 msgstr ""
 
-#: includes/class-facet.php:388 includes/facets/checkboxes.php:192
-#: includes/facets/dropdown.php:167 includes/facets/hierarchy.php:230
+#: includes/class-facet.php:403 includes/facets/checkboxes.php:245
+#: includes/facets/dropdown.php:169 includes/facets/hierarchy.php:230
 msgid "Sort by"
 msgstr ""
 
-#: includes/class-facet.php:392
+#: includes/class-facet.php:407
 msgid "Title (A-Z)"
 msgstr ""
 
-#: includes/class-facet.php:399
+#: includes/class-facet.php:414
 msgid "Title (Z-A)"
 msgstr ""
 
-#: includes/class-facet.php:406
+#: includes/class-facet.php:421
 msgid "Date (Newest)"
 msgstr ""
 
-#: includes/class-facet.php:413
+#: includes/class-facet.php:428
 msgid "Date (Oldest)"
 msgstr ""
 
-#: includes/class-facet.php:480
+#: includes/class-facet.php:493
 msgid "Page"
 msgstr ""
 
@@ -75,47 +75,63 @@ msgstr ""
 msgid "Checkboxes"
 msgstr ""
 
-#: includes/facets/checkboxes.php:177 includes/facets/dropdown.php:152
+#: includes/facets/checkboxes.php:230 includes/facets/dropdown.php:154
 msgid "Parent term"
 msgstr ""
 
-#: includes/facets/checkboxes.php:195 includes/facets/dropdown.php:170
+#: includes/facets/checkboxes.php:248 includes/facets/dropdown.php:172
 #: includes/facets/hierarchy.php:233
 msgid "Facet Count"
 msgstr ""
 
-#: includes/facets/checkboxes.php:196 includes/facets/dropdown.php:171
+#: includes/facets/checkboxes.php:249 includes/facets/dropdown.php:173
 #: includes/facets/hierarchy.php:234
 msgid "Display Value"
 msgstr ""
 
-#: includes/facets/checkboxes.php:197 includes/facets/dropdown.php:172
+#: includes/facets/checkboxes.php:250 includes/facets/dropdown.php:174
 #: includes/facets/hierarchy.php:235
 msgid "Raw Value"
 msgstr ""
 
-#: includes/facets/checkboxes.php:203
+#: includes/facets/checkboxes.php:256
 msgid "Operation"
 msgstr ""
 
-#: includes/facets/checkboxes.php:206
+#: includes/facets/checkboxes.php:259
 msgid "How should multiple selections affect the results?"
 msgstr ""
 
-#: includes/facets/checkboxes.php:211
+#: includes/facets/checkboxes.php:264
 msgid "Narrow the result set"
 msgstr ""
 
-#: includes/facets/checkboxes.php:212
+#: includes/facets/checkboxes.php:265
 msgid "Widen the result set"
 msgstr ""
 
-#: includes/facets/checkboxes.php:218 includes/facets/dropdown.php:178
+#: includes/facets/checkboxes.php:271
+msgid "Show ghosts"
+msgstr ""
+
+#: includes/facets/checkboxes.php:274
+msgid "Show choices that would return zero results?"
+msgstr ""
+
+#: includes/facets/checkboxes.php:279
+msgid "No"
+msgstr ""
+
+#: includes/facets/checkboxes.php:280
+msgid "Yes"
+msgstr ""
+
+#: includes/facets/checkboxes.php:286 includes/facets/dropdown.php:180
 #: includes/facets/hierarchy.php:241
 msgid "Count"
 msgstr ""
 
-#: includes/facets/checkboxes.php:221 includes/facets/dropdown.php:181
+#: includes/facets/checkboxes.php:289 includes/facets/dropdown.php:183
 #: includes/facets/hierarchy.php:244
 msgid "The maximum number of facet choices to show"
 msgstr ""
@@ -136,7 +152,7 @@ msgstr ""
 msgid "Dropdown"
 msgstr ""
 
-#: includes/facets/dropdown.php:55 includes/facets/hierarchy.php:63
+#: includes/facets/dropdown.php:57 includes/facets/hierarchy.php:63
 msgid "Any"
 msgstr ""
 
@@ -200,11 +216,11 @@ msgstr ""
 msgid "Reset"
 msgstr ""
 
-#: includes/facets/slider.php:191
+#: includes/facets/slider.php:201
 msgid "Step"
 msgstr ""
 
-#: includes/facets/slider.php:194
+#: includes/facets/slider.php:204
 msgid "Snap the slider at this interval"
 msgstr ""
 

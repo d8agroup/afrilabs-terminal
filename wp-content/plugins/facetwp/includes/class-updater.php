@@ -32,8 +32,6 @@ class FacetWP_Updater
 
 
     function check_update( $transient ) {
-        $helper = FacetWP_Helper::instance();
-
         if ( empty( $transient->checked ) ) {
             return $transient;
         }
@@ -43,7 +41,7 @@ class FacetWP_Updater
                 'action' => 'version',
                 'slug' => $this->slug,
                 'license' => $this->license,
-                'host' => $helper->get_http_host(),
+                'host' => FWP()->helper->get_http_host(),
             )
         ) );
 

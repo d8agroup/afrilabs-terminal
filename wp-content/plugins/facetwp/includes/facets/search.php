@@ -14,8 +14,8 @@ class FacetWP_Facet_Search
     function render( $params ) {
 
         $output = '';
-        $value = $params['selected_values'];
-        $value = is_array( $value ) ? $value[0] : $value;
+        $value = (array) $params['selected_values'];
+        $value = empty( $value ) ? '' : $value[0];
         $output .= '<input type="text" class="facetwp-search" value="' . esc_attr( $value ) . '" placeholder="' . __( 'Enter keywords', 'fwp' ) . '" />';
         return $output;
     }
@@ -99,7 +99,7 @@ class FacetWP_Facet_Search
     wp.hooks.addAction('facetwp/ready', function() {
         $(document).on('keyup', '.facetwp-facet .facetwp-search', function(e) {
             if (13 == e.keyCode) {
-                FWP.refresh();
+                FWP.autoload();
             }
         });
     });

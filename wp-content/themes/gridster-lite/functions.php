@@ -129,8 +129,8 @@ add_action( 'wp_enqueue_scripts', 'gridster_scripts' );
 
 // Style the Tag Cloud
 function custom_tag_cloud_widget($args) {
-	$args['largest'] = 12; //largest tag
-	$args['smallest'] = 12; //smallest tag
+	$args['largest'] = 14; //largest tag
+	$args['smallest'] = 8; //smallest tag
 	$args['unit'] = 'px'; //tag font unit
 	$args['number'] = '8'; //number of tags
 	return $args;

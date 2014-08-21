@@ -2,6 +2,7 @@ var FWP = {
     'facets': {},
     'template': null,
     'settings': {},
+    'auto_refresh': true,
     'soft_refresh': false,
     'static_facet': null,
     'loaded': false,
@@ -22,6 +23,14 @@ var FWP = {
             }
         }
         return str.join('&');
+    }
+
+
+    // Refresh on each facet interaction?
+    FWP.autoload = function() {
+        if (FWP.auto_refresh) {
+            FWP.refresh();
+        }
     }
 
 
@@ -58,8 +67,23 @@ var FWP = {
                 FWP.facets['paged'] = FWP.paged;
             }
 
+            // Add sorting to the URL hash
+            if (FWP.extras.sort && 'default' != FWP.extras.sort) {
+                FWP.facets['sort'] = FWP.extras.sort;
+            }
+
+            // Allow for custom loading handler
             if (false === FWP.soft_refresh && facet_name != FWP.static_facet) {
-                $this.html('<div class="facetwp-loading" />');
+                if ('function' != typeof FWP.loading_handler) {
+                    $this.html('<div class="facetwp-loading"></div>');
+                }
+                else {
+                    FWP.loading_handler({
+                        'element': $this,
+                        'facet_name': facet_name,
+                        'facet_type': facet_type
+                    });
+                }
             }
         });
 
@@ -86,6 +110,9 @@ var FWP = {
                     if ('paged' == pieces[0]) {
                         FWP.paged = pieces[1];
                     }
+                    else if ('sort' == pieces[0]) {
+                        FWP.extras.sort = pieces[1];
+                    }
                     else if ('' != pieces[1]) {
                         FWP.facets[pieces[0]] = decodeURIComponent(pieces[1]).split(',');
                     }
@@ -101,8 +128,10 @@ var FWP = {
             FWP.jqXHR.abort();
         }
 
+        FWP.ajaxurl = ('wp' == FWP.template) ? document.URL : ajaxurl;
+
         // dataType is "text" to allow for better JSON error handling
-        FWP.jqXHR = $.post(ajaxurl, {
+        FWP.jqXHR = $.post(FWP.ajaxurl, {
             'action': 'facetwp_refresh',
             'data': {
                 'facets': JSON.stringify(FWP.facets),
@@ -146,7 +175,13 @@ var FWP = {
         });
 
         // Populate the template
-        $('.facetwp-template').html(response.template);
+        if ( 'wp' == FWP.template ) {
+            var inject = $(response.template).find('.facetwp-template:first').html();
+            $('.facetwp-template').html(inject);
+        }
+        else {
+            $('.facetwp-template').html(response.template);
+        }
 
         // Populate the counts
         $('.facetwp-counts').html(response.counts);
@@ -203,8 +238,10 @@ var FWP = {
         if (1 > $('.facetwp-template').length) {
             return;
         }
-
-        FWP.template = $('.facetwp-template:first').attr('data-name');
+        else {
+            var $div = $('.facetwp-template:first');
+            FWP.template = $div.is('[data-name]') ? $div.attr('data-name') : 'wp';
+        }
 
         wp.hooks.doAction('facetwp/ready');
 
@@ -221,6 +258,9 @@ var FWP = {
             // Update the "FWP.facets" object
             if ('string' == typeof FWP.facets[facet_name]) {
                 FWP.facets[facet_name] = '';
+            }
+            else if ('date_range' == facet_type) {
+                FWP.facets[facet_name] = [];
             }
             else {
                 var array = FWP.facets[facet_name];

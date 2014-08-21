@@ -3,7 +3,7 @@
 Plugin Name: FacetWP
 Plugin URI: https://facetwp.com/
 Description: Faceted Search and Filtering for WordPress
-Version: 1.3.4
+Version: 1.7.0
 Author: Matt Gibbs
 Author URI: https://facetwp.com/
 
@@ -23,15 +23,24 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
-defined( 'ABSPATH' ) or die();
+defined( 'ABSPATH' ) or exit;
 
 class FacetWP
 {
 
+    public $ajax;
+    public $facet;
+    public $helper;
+    public $indexer;
+    public $display;
+    public $vendor;
+    private static $instance;
+
+
     function __construct() {
 
         // setup variables
-        define( 'FACETWP_VERSION', '1.3.4' );
+        define( 'FACETWP_VERSION', '1.7.0' );
         define( 'FACETWP_DIR', dirname( __FILE__ ) );
         define( 'FACETWP_URL', plugins_url( 'facetwp' ) );
 
@@ -44,6 +53,33 @@ class FacetWP
 
 
     /**
+     * Initialize the singleton
+     */
+    public static function instance() {
+        if ( ! isset( self::$instance ) ) {
+            self::$instance = new FacetWP;
+        }
+        return self::$instance;
+    }
+
+
+    /**
+     * Prevent cloning
+     */
+    function __clone() {
+
+    }
+
+
+    /**
+     * Prevent unserializing
+     */
+    function __wakeup() {
+
+    }
+
+
+    /**
      * Initialize classes and WP hooks
      */
     function init() {
@@ -52,19 +88,21 @@ class FacetWP
         $this->load_textdomain();
 
         // classes
-        foreach ( array( 'ajax', 'facet', 'helper', 'indexer', 'display', 'upgrade', 'vendor' ) as $f ) {
+        foreach ( array( 'helper', 'ajax', 'facet', 'indexer', 'display', 'upgrade', 'vendor' ) as $f ) {
             include( FACETWP_DIR . "/includes/class-{$f}.php" );
         }
 
         $upgrade = new FacetWP_Upgrade();
-        $this->ajax = new FacetWP_Ajax();
-        $this->helper = FacetWP_Helper::instance();
+        $this->helper = new FacetWP_Helper();
+        $this->facet = new FacetWP_Facet();
         $this->indexer = new FacetWP_Indexer();
         $this->display = new FacetWP_Display();
         $this->vendor = new FacetWP_Vendor();
+        $this->ajax = new FacetWP_Ajax();
 
         // hooks
         add_action( 'admin_menu', array( $this, 'admin_menu' ) );
+        add_action( 'wp_enqueue_scripts', array( $this, 'front_scripts' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'admin_scripts' ) );
     }
 
@@ -74,13 +112,13 @@ class FacetWP
      */
     function load_textdomain() {
         $locale = apply_filters( 'plugin_locale', get_locale(), 'fwp' );
-        $mofile = WP_LANG_DIR . '/facetwp/facetwp-' . $locale . '.mo';
+        $mofile = WP_LANG_DIR . '/facetwp/fwp-' . $locale . '.mo';
 
         if ( file_exists( $mofile ) ) {
             load_textdomain( 'fwp', $mofile );
         }
         else {
-            load_plugin_textdomain( 'fwp', false, 'facetwp/languages' );
+            load_plugin_textdomain( 'fwp', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
         }
     }
 
@@ -90,6 +128,14 @@ class FacetWP
      */
     function admin_menu() {
         add_options_page( 'FacetWP', 'FacetWP', 'manage_options', 'facetwp', array( $this, 'settings_page' ) );
+    }
+
+
+    /**
+     * Enqueue jQuery
+     */
+    function front_scripts() {
+        wp_enqueue_script( 'jquery' );
     }
 
 
@@ -116,4 +162,28 @@ class FacetWP
     }
 }
 
-$facetwp = new FacetWP();
+$facetwp = FWP();
+
+
+/**
+ * Allow direct access to FacetWP classes
+ * For example, use FWP()->helper to access FacetWP_Helper
+ */
+function FWP() {
+    return FacetWP::instance();
+}
+
+
+/**
+ * Alternative to do_shortcode
+ */
+function facetwp_display() {
+    $args = func_get_args();
+    if ( in_array( $args[0], array( 'facet', 'template' ) ) ) {
+        $atts = array( $args[0] => $args[1] );
+    }
+    else {
+        $atts = array( $args[0] => true );
+    }
+    return FWP()->display->shortcode( $atts );
+}

@@ -15,9 +15,6 @@ class FacetWP_Facet_Hierarchy
         global $wpdb;
 
 
-        $helper = FacetWP_Helper::instance();
-
-
         $output = '';
         $facet = $params['facet'];
         $selected_values = (array) $params['selected_values'];
@@ -44,7 +41,7 @@ class FacetWP_Facet_Hierarchy
             $facet_parent_id = (int) $selected_values[0];
 
             $taxonomy = str_replace( 'tax/', '', $facet['source'] );
-            $depths = $helper->get_term_depths( $taxonomy );
+            $depths = FWP()->helper->get_term_depths( $taxonomy );
             $max_depth = (int) $depths[$facet_parent_id]['depth'];
             $last_parent_id = $facet_parent_id;
 
@@ -75,13 +72,12 @@ class FacetWP_Facet_Hierarchy
                     $active = '';
                     $prev_link['label'] = '&#8249; ' . $prev_link['label'];
                 }
-                $output .= '<div class="facetwp-depth">';
+                if ( 0 < $counter ) {
+                    $output .= '<div class="facetwp-depth">';
+                }
                 $output .= '<div class="facetwp-link' . $active . '" data-value="' . $prev_link['value'] . '">' . $prev_link['label'] . '</div>';
             }
         }
-
-
-        $output .= '<div class="facetwp-depth">';
 
 
         $sql = "
@@ -94,6 +90,10 @@ class FacetWP_Facet_Hierarchy
         $results = $wpdb->get_results( $sql );
 
         $key = 0;
+
+        if ( !empty( $prev_links ) ) {
+            $output .= '<div class="facetwp-depth">';
+        }
 
         if ( !empty( $results ) ) {
             foreach ( $results as $key => $result ) {
@@ -112,8 +112,11 @@ class FacetWP_Facet_Hierarchy
             $output .= '<div class="facetwp-toggle facetwp-hidden">- ' . __( 'Less', 'fwp' ) . '</div>';
         }
 
-
         for ( $i = 0; $i <= $max_depth; $i++ ) {
+            $output .= '</div>';
+        }
+
+        if ( !empty( $prev_links ) ) {
             $output .= '</div>';
         }
 
@@ -188,7 +191,7 @@ class FacetWP_Facet_Hierarchy
             if ('' != $(this).attr('data-value')) {
                 $(this).addClass('checked');
             }
-            FWP.refresh();
+            FWP.autoload();
         });
 
         $(document).on('click', '.facetwp-facet .facetwp-toggle', function() {

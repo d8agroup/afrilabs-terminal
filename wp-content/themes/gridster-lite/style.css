@@ -191,19 +191,40 @@ a:hover, a:focus, a:active {
 	max-width:990px;
 	margin-top:-140px;
 	overflow:auto;
+	color:#000;
+	font-size:14px;
 }
+#content h7 {
+	font-size:18px;
+}
+#company-logo {
+	display:block;
+	width:510px;
+	float:left;
+}
+#company-img {
+	width:510px;
+	float:left;
+}
+#company-data {
+	display:block;
+	width:300px;
+	float:right;
+}
+
+
 #meta {
-	font-size: 12px;
+	font-size:12px;
 	padding-left:5px;
 	padding-right:30px;
 	padding-top:10px;
-	padding-bottom:25px;
+	padding-bottom:10px;
 	margin-left:-10px;
 }
 
 #meta li {
 	display:inline;
-	margin-right:40px;
+	margin-right:20px;
 	line-height: 30px;
 }
 #meta .datemeta {

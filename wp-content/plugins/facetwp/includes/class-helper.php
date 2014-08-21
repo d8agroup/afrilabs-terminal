@@ -3,57 +3,41 @@
 final class FacetWP_Helper
 {
 
-    private static $instance;
     public $settings;
     public $facet_types;
 
 
     /**
-     * Initialize the singleton
+     * Backwards-compatibility
      */
     public static function instance() {
-        if ( ! isset( self::$instance ) ) {
-            self::$instance = new FacetWP_Helper;
-            self::$instance->settings = json_decode( get_option( 'facetwp_settings' ), true );
-
-            // custom facet types
-            include( FACETWP_DIR . '/includes/facets/autocomplete.php' );
-            include( FACETWP_DIR . '/includes/facets/checkboxes.php' );
-            include( FACETWP_DIR . '/includes/facets/date_range.php' );
-            include( FACETWP_DIR . '/includes/facets/dropdown.php' );
-            include( FACETWP_DIR . '/includes/facets/hierarchy.php' );
-            include( FACETWP_DIR . '/includes/facets/number_range.php' );
-            include( FACETWP_DIR . '/includes/facets/search.php' );
-            include( FACETWP_DIR . '/includes/facets/slider.php' );
-
-            self::$instance->facet_types = apply_filters( 'facetwp_facet_types', array(
-                'checkboxes'        => new FacetWP_Facet_Checkboxes(),
-                'date_range'        => new FacetWP_Facet_Date_Range(),
-                'dropdown'          => new FacetWP_Facet_Dropdown(),
-                'hierarchy'         => new FacetWP_Facet_Hierarchy(),
-                'number_range'      => new FacetWP_Facet_Number_Range(),
-                'search'            => new FacetWP_Facet_Search(),
-                'slider'            => new FacetWP_Facet_Slider(),
-                'autocomplete'      => new FacetWP_Facet_Autocomplete()
-            ) );
-        }
-        return self::$instance;
+        return FWP()->helper;
     }
 
 
-    /**
-     * Prevent cloning
-     */
-    function __clone() {
+    function __construct() {
+        $this->settings = $this->load_settings();
 
-    }
+        // custom facet types
+        include( FACETWP_DIR . '/includes/facets/autocomplete.php' );
+        include( FACETWP_DIR . '/includes/facets/checkboxes.php' );
+        include( FACETWP_DIR . '/includes/facets/date_range.php' );
+        include( FACETWP_DIR . '/includes/facets/dropdown.php' );
+        include( FACETWP_DIR . '/includes/facets/hierarchy.php' );
+        include( FACETWP_DIR . '/includes/facets/number_range.php' );
+        include( FACETWP_DIR . '/includes/facets/search.php' );
+        include( FACETWP_DIR . '/includes/facets/slider.php' );
 
-
-    /**
-     * Prevent unserializing
-     */
-    function __wakeup() {
-
+        $this->facet_types = apply_filters( 'facetwp_facet_types', array(
+            'checkboxes'        => new FacetWP_Facet_Checkboxes(),
+            'date_range'        => new FacetWP_Facet_Date_Range(),
+            'dropdown'          => new FacetWP_Facet_Dropdown(),
+            'hierarchy'         => new FacetWP_Facet_Hierarchy(),
+            'number_range'      => new FacetWP_Facet_Number_Range(),
+            'search'            => new FacetWP_Facet_Search(),
+            'slider'            => new FacetWP_Facet_Slider(),
+            'autocomplete'      => new FacetWP_Facet_Autocomplete()
+        ) );
     }
 
 
@@ -66,15 +50,39 @@ final class FacetWP_Helper
 
 
     /**
-     * Get an array of active facets
+     * Get settings and allow for developer hooks
+     */
+    function load_settings() {
+        $settings = json_decode( get_option( 'facetwp_settings' ), true );
+        $settings['facets'] = apply_filters( 'facetwp_facets', $settings['facets'] );
+        $settings['templates'] = apply_filters( 'facetwp_templates', $settings['templates'] );
+
+        if ( empty( $settings['facets'] ) ) {
+            $settings['facets'] = array();
+        }
+        if ( empty( $settings['templates'] ) ) {
+            $settings['templates'] = array();
+        }
+
+        return $settings;
+    }
+
+
+    /**
+     * Get an array of all facets
      * @return array
      */
     function get_facets() {
-        $facets = array();
-        foreach ( $this->settings['facets'] as $facet ) {
-            $facets[] = $facet;
-        }
-        return $facets;
+        return $this->settings['facets'];
+    }
+
+
+    /**
+     * Get an array of all templates
+     * @return array
+     */
+    function get_templates() {
+        return $this->settings['templates'];
     }
 
 
@@ -84,7 +92,7 @@ final class FacetWP_Helper
      * @return mixed An array of facet info, or false
      */
     function get_facet_by_name( $facet_name ) {
-        foreach ( $this->settings['facets'] as $facet ) {
+        foreach ( $this->get_facets() as $facet ) {
             if ( $facet_name == $facet['name'] ) {
                 return $facet;
             }
@@ -99,7 +107,7 @@ final class FacetWP_Helper
      * @return mixed An array of template info, or false
      */
     function get_template_by_name( $template_name ) {
-        foreach ( $this->settings['templates'] as $template ) {
+        foreach ( $this->get_templates() as $template ) {
             if ( $template_name == $template['name'] ) {
                 return $template;
             }
@@ -165,6 +173,44 @@ final class FacetWP_Helper
 
 
     /**
+     * Finish sorting the facet values
+     * The results are already sorted by depth and (name OR count), we just need
+     * to move the children directly below their parents
+     */
+    function sort_taxonomy_values( $values = array(), $orderby = 'count' ) {
+
+        // Create an "order" sort value based on the top-level items
+        $cache = array();
+        foreach ( $values as $key => $val ) {
+            if ( 0 == $val['depth'] ) {
+                $cache[ $val['facet_value'] ] = $key;
+                $values[ $key ]['order'] = $key;
+            }
+            else {
+                $new_order = $cache[ $val['parent_id'] ] . ".$key"; // dot-separated hierarchy string
+                $cache[ $val['facet_value'] ] = $new_order;
+                $values[ $key ]['order'] = $new_order;
+            }
+        }
+
+        // Sort the array based on the new "order" element
+        // Since this is a dot-separated hierarchy string, treat it like version_compare
+        usort( $values, array( $this, 'compare_order' ) );
+
+        return $values;
+    }
+
+
+    /**
+     * Sort the "order" string using version_compare
+     * @since 1.6.1
+     */
+    function compare_order( $a, $b ) {
+        return version_compare( $a['order'], $b['order'] );
+    }
+
+
+    /**
      * Sanitize SQL data
      * @return mixed The sanitized value(s)
      * @since 0.9.1
@@ -174,7 +220,7 @@ final class FacetWP_Helper
         if ( is_array( $input ) ) {
             $output = array();
 
-            foreach( $input as $key => $val ) {
+            foreach ( $input as $key => $val ) {
                 $output[$key] = $this->sanitize( $val );
             }
         }
@@ -183,5 +229,20 @@ final class FacetWP_Helper
         }
 
         return $output;
+    }
+
+
+    /**
+     * Does a facet with the specified setting exist?
+     * @return boolean
+     * @since 1.4.0
+     */
+    function facet_setting_exists( $setting_name, $setting_value, $facets = array() ) {
+        foreach ( $facets as $facet ) {
+            if ( isset( $facet[ $setting_name ] ) && $facet[ $setting_name ] == $setting_value ) {
+                return true;
+            }
+        }
+        return false;
     }
 }

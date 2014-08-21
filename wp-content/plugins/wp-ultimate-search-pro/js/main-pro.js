@@ -58,9 +58,34 @@ jQuery(document).ready(function($) {
 		left:      'auto' // Left position relative to parent in px
 	};
 
+	// Defaults for shortcode params
+	var query = '';
+	var include = '';
+	var exclude = '';
+
+	// Check to see if default parameters have been passed into the shortcode
+	if(typeof shortcode_localize != 'undefined') {
+		
+		// Prepopulated query
+		if('std' in shortcode_localize) {
+			query = shortcode_localize.std;
+		}
+
+		// Include terms
+		if('include' in shortcode_localize) {
+			include = shortcode_localize.include;
+		}
+
+		// Exclude terms
+		if('exclude' in shortcode_localize) {
+			exclude = shortcode_localize.exclude;
+		}
+
+	}
+
 	var visualSearch = VS.init({
-		container:  $("#search_box_container"),
-		query:      '',
+		container	: $("#search_box_container"),
+		query 		: query,
 		remainder   : wpus_script.remainder,
 		placeholder : wpus_script.placeholder,
       	showFacets  : wpus_script.showfacets,
@@ -98,9 +123,9 @@ jQuery(document).ready(function($) {
 				}, 500, function() {});
 
 				var data = {
-					action:       "wpus_search",
-					wpusquery: searchCollection.facets(),
-					searchNonce:  wpus_script.searchNonce
+					action 		: "wpus_search",
+					wpusquery	: searchCollection.facets(),
+					searchNonce	: wpus_script.searchNonce
 				};
 
 				if($("#wpus_response").length > 0) {
@@ -161,8 +186,10 @@ jQuery(document).ready(function($) {
 			  		return;
 				}
 				var data = {
-					action: "wpus_getvalues",
-					facet:  category
+					action 	: "wpus_getvalues",
+					facet 	: category,
+					include	: include,
+					exclude	: exclude
 				};
 				$.get(wpus_script.ajaxurl, data, function(response_from_get_values) {
 					if(response_from_get_values) {
@@ -195,7 +222,9 @@ jQuery(document).ready(function($) {
 				// If only one facet has been enabled, and "single facet" mode is turned on
 				if(facets.length == 1 && wpus_script.single_facet == true && currentfacets.length > 0) {
 
-                    if(currentfacets[currentfacets.length-1]['category'].length > 0) {
+					var lastfacet = currentfacets[currentfacets.length-1];
+
+                    if(lastfacet[Object.keys(lastfacet)[0]].length > 0) {
 
                     	// Add a regular facet to the box
 						visualSearch.searchBox.addFacet(facets[0], '', 99);
@@ -273,8 +302,6 @@ jQuery(document).ready(function($) {
 				}
 			}
 
-			// Move the cursor to the last facet and open the autocomplete dropdown
-			visualSearch.searchBox.facetViews[0].setCursorAtEnd(-1);
 		}
 	});
 	// Initiate the router

@@ -2,8 +2,8 @@
 
 global $wpdb;
 
-
-$helper = FacetWP_Helper::instance();
+// An array of facet type objects
+$facet_types = FWP()->helper->facet_types;
 
 
 // custom fields
@@ -54,7 +54,7 @@ if ( ! empty( $activation ) ) {
 })(jQuery);
 </script>
 <?php
-foreach ( $helper->facet_types as $class ) {
+foreach ( $facet_types as $class ) {
     $class->admin_scripts();
 }
 ?>
@@ -63,6 +63,12 @@ foreach ( $helper->facet_types as $class ) {
 
 
 <div class="wrap">
+
+    <div class="facetwp-top-buttons">
+        <a class="button facetwp-rebuild"><?php _e( 'Re-index', 'fwp' ); ?></a>
+        <a class="button facetwp-migrate" href="options-general.php?page=facetwp&subpage=migrate"><?php _e( 'Migrate', 'fwp' ); ?> &raquo;</a>
+    </div>
+
     <div id="icon-facetwp">
         <img src="<?php echo FACETWP_URL; ?>/assets/images/facetwp.png" width="32" height="32" title="FacetWP" alt="FacetWP" />
     </div>
@@ -72,13 +78,10 @@ foreach ( $helper->facet_types as $class ) {
         <a class="nav-tab" rel="settings"><?php _e( 'Settings', 'fwp' ); ?></a>
     </h2>
 
-    <a class="button facetwp-migrate" href="options-general.php?page=facetwp&subpage=migrate"><?php _e( 'Migrate', 'fwp' ); ?></a>
-
     <div class="facetwp-response"></div>
 
     <div class="facetwp-action-buttons">
         <div style="float:right">
-            <a class="button-primary facetwp-rebuild"><?php _e( 'Rebuild Index', 'fwp' ); ?></a>
             <a class="button-primary facetwp-save"><?php _e( 'Save Changes', 'fwp' ); ?></a>
         </div>
         <a class="button add-facet"><?php _e( 'Add Facet', 'fwp' ); ?></a>
@@ -134,7 +137,7 @@ foreach ( $helper->facet_types as $class ) {
                     <td><?php _e( 'Facet type', 'fwp' ); ?>:</td>
                     <td>
                         <select class="facet-type">
-                            <?php foreach ( $helper->facet_types as $name => $class ) : ?>
+                            <?php foreach ( $facet_types as $name => $class ) : ?>
                             <option value="<?php echo $name; ?>"><?php echo $class->label; ?></option>
                             <?php endforeach; ?>
                         </select>
@@ -166,7 +169,7 @@ foreach ( $helper->facet_types as $class ) {
                     </td>
                 </tr>
 <?php
-foreach ( $helper->facet_types as $class ) {
+foreach ( $facet_types as $class ) {
     $class->settings_html();
 }
 ?>
@@ -177,23 +180,19 @@ foreach ( $helper->facet_types as $class ) {
 
     <div class="templates-hidden">
         <div class="facetwp-template">
-            <table class="facetwp-table">
-                <tr>
-                    <td style="width:175px"><?php _e( 'Label', 'fwp' ); ?>:</td>
-                    <td>
-                        <input type="text" class="template-label" value="" />
-                        <input type="text" class="template-name" value="" />
-                    </td>
-                </tr>
-                <tr>
-                    <td><?php _e( 'Query Arguments', 'fwp' ); ?>:</td>
-                    <td><textarea class="template-query"></textarea>
-                </tr>
-                <tr>
-                    <td><?php _e( 'Display Code', 'fwp' ); ?>:</td>
-                    <td><textarea class="template-template"></textarea>
-                </tr>
-            </table>
+            <div class="table-row">
+                <div class="row-label"><?php _e( 'Label', 'fwp' ); ?>:</div>
+                <input type="text" class="template-label" value="" />
+                <input type="text" class="template-name" value="" />
+            </div>
+            <div class="table-row">
+                <div class="row-label"><?php _e( 'Query Arguments', 'fwp' ); ?>:</div>
+                <textarea class="template-query"></textarea>
+            </div>
+            <div class="table-row">
+                <div class="row-label"><?php _e( 'Display Code', 'fwp' ); ?>:</div>
+                <textarea class="template-template"></textarea>
+            </div>
             <a class="remove-template"><?php _e( 'Delete Template', 'fwp' ); ?></a>
         </div>
     </div>

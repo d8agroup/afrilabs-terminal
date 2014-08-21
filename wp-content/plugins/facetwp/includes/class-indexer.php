@@ -1,17 +1,14 @@
 <?php
 
 // Bypass the PHP timeout
-set_time_limit( 0 );
+ini_set( 'max_execution_time', 0 );
 
 class FacetWP_Indexer
 {
-    public $helper;
     public $indexing = false;
 
 
     function __construct() {
-        $this->helper = FacetWP_Helper::instance();
-
         add_action( 'save_post',            array( $this, 'save_post' ) );
         add_action( 'delete_post',          array( $this, 'delete_post' ) );
         add_action( 'edited_term',          array( $this, 'edit_term' ), 10, 3 );
@@ -132,7 +129,7 @@ class FacetWP_Indexer
         $args = apply_filters( 'facetwp_indexer_query_args', $args );
 
         // Get all facet sources
-        $facets = $this->helper->get_facets();
+        $facets = FWP()->helper->get_facets();
 
         // Loop through all posts
         $query = new WP_Query( $args );
@@ -142,6 +139,9 @@ class FacetWP_Indexer
         set_transient( 'facetwp_num_total', count( $post_ids ) );
 
         foreach ( $post_ids as $counter => $post_id ) {
+
+            // Force WPML to change the language
+            do_action( 'facetwp_indexer_post', array( 'post_id' => $post_id ) );
 
             // Loop through all facets
             foreach ( $facets as $facet ) {
@@ -169,7 +169,7 @@ class FacetWP_Indexer
                     $values = wp_get_object_terms( $post_id, $taxonomy );
 
                     // Store the term depths
-                    $hierarchy = $this->helper->get_term_depths( $taxonomy );
+                    $hierarchy = FWP()->helper->get_term_depths( $taxonomy );
                     $used_terms = array();
 
                     // Only index child terms
@@ -203,7 +203,7 @@ class FacetWP_Indexer
                         $this->index_row( $params );
 
                         // Automatically index implicit parents
-                        if ( 'hierarchy' == $facet['type'] ) {
+                        if ( 'hierarchy' == $facet['type'] || ( !empty( $facet['hierarchical'] ) && 'yes' == $facet['hierarchical'] ) ) {
                             while ( $depth > 0 ) {
                                 $term_id = $term_info['parent_id'];
                                 $term_info = $hierarchy[$term_id];
@@ -299,13 +299,15 @@ class FacetWP_Indexer
 
         // Only accept scalar values
         $value = $params['facet_value'];
-        if ( empty( $value ) || is_array( $value ) || is_object( $value ) ) {
+        if ( '' == $value || ! is_scalar( $value ) ) {
             return;
         }
 
         // Hash the value if it contains unsafe characters
         if ( preg_match( '/[^a-z0-9.\-]/i', $value ) ) {
-            $params['facet_value'] = md5( $value );
+            if ( !preg_match( '/^\d{4}-(0[1-9]|1[012])-([012]\d|3[01]) ([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/', $value ) ) {
+                $params['facet_value'] = md5( $value );
+            }
         }
 
         $wpdb->query( $wpdb->prepare( "INSERT INTO {$wpdb->prefix}facetwp_index

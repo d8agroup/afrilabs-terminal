@@ -35,10 +35,10 @@ class FacetWP_Facet_Slider
         $where = '';
 
         if ( !empty( $values[0] ) ) {
-            $where .= " AND CAST(facet_value AS DECIMAL(10,2)) >= '{$values[0]}'";
+            $where .= " AND CAST(facet_display_value AS DECIMAL(10,2)) >= '{$values[0]}'";
         }
         if ( !empty( $values[1] ) ) {
-            $where .= " AND CAST(facet_value AS DECIMAL(10,2)) <= '{$values[1]}'";
+            $where .= " AND CAST(facet_display_value AS DECIMAL(10,2)) <= '{$values[1]}'";
         }
 
         $sql = "
@@ -58,15 +58,18 @@ class FacetWP_Facet_Slider
         $where_clause = $params['where_clause'];
         $selected_values = $params['selected_values'];
 
-        $min = $wpdb->get_var( "SELECT facet_value FROM {$wpdb->prefix}facetwp_index WHERE facet_name = '{$facet['name']}' $where_clause ORDER BY CAST(facet_value AS SIGNED) ASC" );
-        $max = $wpdb->get_var( "SELECT facet_value FROM {$wpdb->prefix}facetwp_index WHERE facet_name = '{$facet['name']}' $where_clause ORDER BY CAST(facet_value AS SIGNED) DESC" );
+        $min = $wpdb->get_var( "SELECT facet_display_value FROM {$wpdb->prefix}facetwp_index WHERE facet_name = '{$facet['name']}' $where_clause ORDER BY CAST(facet_display_value AS SIGNED) ASC LIMIT 1" );
+        $max = $wpdb->get_var( "SELECT facet_display_value FROM {$wpdb->prefix}facetwp_index WHERE facet_name = '{$facet['name']}' $where_clause ORDER BY CAST(facet_display_value AS SIGNED) DESC LIMIT 1" );
 
         $selected_min = isset( $selected_values[0] ) ? $selected_values[0] : $min;
         $selected_max = isset( $selected_values[1] ) ? $selected_values[1] : $max;
 
         return array(
-            'range' => array($selected_min, $selected_max),
-            'start' => array($min, $max),
+            'range' => array(
+                'min' => (float) $selected_min,
+                'max' => (float) $selected_max
+            ),
+            'start' => array( $min, $max ),
             'step' => $facet['step'],
             'resolution' => 1
         );
@@ -102,7 +105,7 @@ class FacetWP_Facet_Slider
     function front_scripts() {
 ?>
 <link href="<?php echo FACETWP_URL; ?>/assets/js/noUiSlider/jquery.nouislider.css" rel="stylesheet">
-<script src="<?php echo FACETWP_URL; ?>/assets/js/noUiSlider/jquery.nouislider.js"></script>
+<script src="<?php echo FACETWP_URL; ?>/assets/js/noUiSlider/jquery.nouislider.min.js"></script>
 <script>
 
 
@@ -127,7 +130,7 @@ FWP.used_facets = {};
     });
 
     $(document).on('facetwp-loaded', function() {
-        $('.facetwp-slider').each(function() {
+        $('.facetwp-slider:not(.ready)').each(function() {
             var $parent = $(this).closest('.facetwp-facet');
             var facet_name = $parent.attr('data-name');
             var opts = FWP.settings[facet_name];
@@ -138,35 +141,44 @@ FWP.used_facets = {};
             }
 
             // Fail on invalid ranges
-            if (opts.range[0] >= opts.range[1]) {
+            if (parseFloat(opts.range.min) >= parseFloat(opts.range.max)) {
+                FWP.settings[facet_name]['lower'] = opts.range.min;
+                FWP.settings[facet_name]['upper'] = opts.range.max;
+                wp.hooks.doAction('facetwp/set_label/slider', $parent);
                 return false;
             }
 
             $(this).noUiSlider({
                 range: opts.range,
                 start: opts.start,
-                step: opts.step,
+                step: parseFloat(opts.step),
                 behavior: 'extend',
                 connect: true,
-                set: function() {
-                    FWP.used_facets[facet_name] = true;
-                    FWP.static_facet = facet_name;
-                    FWP.refresh();
-                },
                 serialization: {
-                    to: [
-                        function(val) {
-                            FWP.settings[facet_name]['lower'] = val;
-                            wp.hooks.doAction('facetwp/set_label/slider', $parent);
-                        },
-                        function(val) {
-                            FWP.settings[facet_name]['upper'] = val;
-                            wp.hooks.doAction('facetwp/set_label/slider', $parent);
-                        }
+                    lower: [
+                        $.Link({
+                            target: function(val) {
+                                FWP.settings[facet_name]['lower'] = val;
+                                wp.hooks.doAction('facetwp/set_label/slider', $parent);
+                            }
+                        })
                     ],
-                    resolution: opts.resolution
+                    upper: [
+                        $.Link({
+                            target: function(val) {
+                                FWP.settings[facet_name]['upper'] = val;
+                                wp.hooks.doAction('facetwp/set_label/slider', $parent);
+                            }
+                        })
+                    ]
                 }
+            }).on('set', function() {
+                FWP.used_facets[facet_name] = true;
+                FWP.static_facet = facet_name;
+                FWP.autoload();
             });
+
+            $(this).addClass('ready');
         });
     });
 

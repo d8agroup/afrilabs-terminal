@@ -26,6 +26,8 @@ class FacetWP_Facet_Dropdown
             $orderby = 'f.facet_value ASC';
         }
 
+        $orderby = apply_filters( 'facetwp_facet_orderby', $orderby, $facet );
+
         // Limit
         $limit = ctype_digit( $facet['count'] ) ? $facet['count'] : 10;
 
@@ -51,8 +53,10 @@ class FacetWP_Facet_Dropdown
         $values = (array) $params['values'];
         $selected_values = (array) $params['selected_values'];
 
+        $label_any = empty( $facet['label_any'] ) ? __( 'Any', 'fwp' ) : $facet['label_any'];
+
         $output .= '<select class="facetwp-dropdown">';
-        $output .= '<option value="">- ' . __( 'Any', 'fwp' ) . ' -</option>';
+        $output .= '<option value="">' . esc_attr( $label_any ) . '</option>';
 
         foreach ( $values as $result ) {
             $selected = in_array( $result->facet_value, $selected_values ) ? ' selected' : '';
@@ -98,6 +102,7 @@ class FacetWP_Facet_Dropdown
 (function($) {
     wp.hooks.addAction('facetwp/load/dropdown', function($this, obj) {
         $this.find('.facet-source').val(obj.source);
+        $this.find('.facet-label-any').val(obj.label_any);
         $this.find('.facet-parent-term').val(obj.parent_term);
         $this.find('.type-dropdown .facet-orderby').val(obj.orderby);
         $this.find('.type-dropdown .facet-count').val(obj.count);
@@ -105,6 +110,7 @@ class FacetWP_Facet_Dropdown
 
     wp.hooks.addFilter('facetwp/save/dropdown', function($this, obj) {
         obj['source'] = $this.find('.facet-source').val();
+        obj['label_any'] = $this.find('.type-dropdown .facet-label-any').val();
         obj['parent_term'] = $this.find('.type-dropdown .facet-parent-term').val();
         obj['orderby'] = $this.find('.type-dropdown .facet-orderby').val();
         obj['count'] = $this.find('.type-dropdown .facet-count').val();
@@ -133,7 +139,7 @@ class FacetWP_Facet_Dropdown
             if ('' != $facet.find(':selected').val()) {
                 FWP.static_facet = $facet.attr('data-name');
             }
-            FWP.refresh();
+            FWP.autoload();
         });
     });
 })(jQuery);
@@ -147,6 +153,20 @@ class FacetWP_Facet_Dropdown
      */
     function settings_html() {
 ?>
+        <tr class="facetwp-conditional type-dropdown">
+            <td>
+                <?php _e( 'Default label', 'fwp' ); ?>:
+                <div class="facetwp-tooltip">
+                    <span class="icon-question">?</span>
+                    <div class="facetwp-tooltip-content">
+                        Customize the first option label (default: "Any")
+                    </div>
+                </div>
+            </td>
+            <td>
+                <input type="text" class="facet-label-any" value="<?php _e( 'Any', 'fwp' ); ?>" />
+            </td>
+        </tr>
         <tr class="facetwp-conditional type-dropdown">
             <td>
                 <?php _e('Parent term', 'fwp'); ?>:

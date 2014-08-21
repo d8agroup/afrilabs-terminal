@@ -3,6 +3,26 @@ WP Ultimate Search Pro
 
 WP Ultimate Search Pro. Premium upgrade for WP Ultimate Search.
 
+v1.6
+------------------------
+(updated to 1.6 to stay in sync with free version)
+* Added built in custom results templates (post with thumbnail, title only, thumbnail only)
+* Added ability to override default settings via shortcode / template tag
+* Added support for ACF date field
+* Added support for ACF true/false field
+* Fixed cursor not appearing on initial search bar focus in Square style
+* Fixed bug where clicking on placeholder text would prevent search
+* Changed "include" and "exclude" fields to require term IDs instead of names
+* Continuing style refinements
+
+v1.4.2
+------------------------
+* Added cancel button next to facets in single facet mode
+* Dropdown menu no longer appears in wrong location when facets are deleted
+* "AND" logic now works correctly again
+* Fixed bug where meta field options wouldn't display properly
+* Fixed bug caused by using Single Facet Mode with a metadata facet
+
 v1.4.1
 ------------------------
 * Values will no longer appear in dropdown if they're already in use in the search bar
